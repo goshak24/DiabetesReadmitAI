@@ -1,0 +1,67 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Perceptron, LinearRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neural_network import MLPClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+data = pd.read_csv('Downloads/diabetic_data_formatted.csv')
+X = data.drop(columns=['readmitted'])
+y = data['readmitted'] 
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+models = {
+    "Perceptron": Perceptron(),
+    "Decision Tree": DecisionTreeClassifier(),
+    "Linear Regression": LinearRegression(),
+    "SVM": SVC(),
+    "Random Forest": RandomForestClassifier(),
+    "K-Nearest Neighbors": KNeighborsClassifier(),
+    "Naive Bayes": GaussianNB(),
+    "Neural Network": MLPClassifier(max_iter=1000)
+}
+
+results = {
+    "Model": [],
+    "Accuracy": [],
+    "Precision": [],
+    "Recall": [],
+    "F1 Score": []
+}
+for model_name, model in models.items():
+    if model_name == "Linear Regression":
+        continue
+
+    if model_name in ["SVM", "Perceptron", "Neural Network"]:
+        model.fit(X_train_scaled, y_train)
+    else:
+        model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test_scaled if model_name in ["SVM", "Perceptron", "Neural Network"] else X_test)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
+    recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+    f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+
+    results["Model"].append(model_name)
+    results["Accuracy"].append(accuracy)
+    results["Precision"].append(precision)
+    results["Recall"].append(recall)
+    results["F1 Score"].append(f1)
+
+results_df = pd.DataFrame(results)
+results_df = results_df.sort_values(by="Accuracy", ascending=False)
+
+print(results_df)
